@@ -1,0 +1,9 @@
+// Ignorar arquivos com dados sensíveis
+src/private.py
+users_data.json
+
+// Ignorar Env
+env
+
+// Ignorar pycache
+src/__pycache__
