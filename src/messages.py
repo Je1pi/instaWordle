@@ -1,4 +1,4 @@
-welcome = {
+WELCOME = {
     "en": (
         "Hello! 👋 Welcome to InstaWordle! 🎉\n"
         "\nHere's how it works:\n"
@@ -34,19 +34,25 @@ welcome = {
     )
 }
 
-language = {
+LANG_CHANGED = {
     "en": "Language changed to English.",
     "pt": "A língua foi alterada para Português.",
     "es": "Idioma cambiado a Español."
 }
 
-invalid_language = {
+INVALID_LANGUAGE = {
     "en": "Invalid language. Please choose from [en|pt|es].",
     "pt": "Idioma inválido. Por favor, escolha entre [en|pt|es].",
     "es": "Idioma inválido. Por favor, elige entre [en|pt|es]."
 }
 
-game_started = {
+TUTO_LANGUAGE = {
+    "en": "Please choose a language. Example: /lang en.",
+    "pt": "Por favor, escolha um idioma. Exemplo: /lang pt.",
+    "es": "Por favor, elige un idioma. Ejemplo: /lang es."
+}
+
+GAME_STARTED = {
     "en": (
         "The Game has started! Good luck! 🎉\n",
         "Type your guess below or type '/stop' to stop the game."
@@ -61,38 +67,38 @@ game_started = {
     )
 }
 
-game_stopped = {
+GAME_STOPPED = {
     "en": "Game stopped. See you next time!",
     "pt": "Jogo parado. Até a próxima!",
     "es": "Juego detenido. ¡Hasta la próxima!"
 }
 
-invalid_guess_length = {
+INVALID_GUESS_LENGTH = {
     "en": "Invalid guess length. The word has {} letters.",
     "pt": "Comprimento de palpite inválido. A palavra tem {} letras.",
     "es": "Longitud de suposición inválida. La palabra tiene {} letras."
 }
 
-already_played_today = {
+ALREADY_PLAYED_TODAY = {
     "en": "You've already played today. Come back tomorrow!",
     "pt": "Você já jogou hoje. Volte amanhã!",
     "es": "Ya has jugado hoy. ¡Vuelve mañana!"
 }
 
-correct_guess = {
+CORRECT_GUESS = {
     "en": "Congratulations! 🎉 You guessed the word correctly!",
     "pt": "Parabéns! 🎉 Você adivinhou a palavra corretamente!",
     "es": "¡Felicidades! 🎉 ¡Adivinaste la palabra correctamente!"
 }
 
-incorrect_guess = {
+INCORRECT_GUESS = {
     "en": "Incorrect guess -> Errors ({}/5). Try again!",
     "pt": "Palpite incorreto -> Erros ({}/5). Tente novamente!",
     "es": "Suposición incorrecta -> Errores ({}/5). ¡Inténtalo de nuevo!"
 }
 
-game_winded = {
-    "en": "You've already guessed today's word. Come back tomorrow!",
-    "pt": "Você já adivinhou a palavra de hoje. Volte amanhã!",
-    "es": "Ya has adivinado la palabra de hoy. ¡Vuelve mañana!"
+GAME_OVER = {
+    "en": "Game Over! The word was '{}'. Better luck next time!",
+    "pt": "Fim de Jogo! A palavra era '{}'. Boa sorte na próxima!",
+    "es": "Fin del Juego! La palabra era '{}'. ¡Buena suerte la próxima vez!"
 }

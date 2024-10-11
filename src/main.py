@@ -1,9 +1,15 @@
-from instagrapi import Client
-import handleData
+from instagrapi import Client # type: ignore
+from datetime import datetime
+from Command import Commands
+from Data import Data
 import messages
 import private
-import time
 import word
+import os
+
+# Delete users data -> temporary
+if os.path.exists("database/users.db"):
+    os.remove("database/users.db")
 
 # Get the 2FA code from user
 code = input("2FA Code: ")
@@ -13,98 +19,110 @@ cl = Client()
 cl.login(private.USERNAME, private.PASSWORD, False, code)
 
 # Get user ID of the bot
-bot_user_id = cl.user_id_from_username(private.USERNAME)
+botID = cl.user_id
 
-# Dictionary to store last message from each client
-last_messages = {}
+# Last Messages
+lastMessages = {}
 
-# Load user data
-users_data = handleData.loadUsersData()
+# Users data
+usersData = Data()
 
-# Get the word of the day
-word_of_the_day = word.get_word_of_the_day()
+start_time = datetime.now()
 
-# Store the timestamp of the first execution
-start_time = time.time()
+# Commands
+commands = Commands()
 
-# Main loop
-print("Checking for new messages...")
+# /Lang command
+def langCommand(client, message):
+    parts = message.split()
+
+    if len(parts) > 1:
+        lang = parts[1].lower()
+        if lang in ["pt", "en", "es"]:
+            usersData.changeLang(client, lang)
+            return messages.LANG_CHANGED
+        else:
+            return messages.INVALID_LANGUAGE
+    else:
+        return messages.TUTO_LANGUAGE
+
+commands.appendCommand("lang", langCommand)
+
+# /Play command
+def playCommand(client):
+    usersData.setPlaying(client, True)
+    usersData.setWord(client, usersData.getLang(client))
+    return messages.GAME_STARTED[usersData.getLang(client)]
+
+commands.appendCommand("play", playCommand)
+
+# /Stop command
+def stopCommand(client):
+    usersData.setPlaying(client, False)
+    return messages.GAME_STOPPED[usersData.getLang(client)]
+
+commands.appendCommand("stop", stopCommand)
+
+
+print("Bot is running...")
 while True:
+    word.setTodayWord()
+
     threads = cl.direct_threads()
 
     for thread in threads:
-        last_message_in_thread = cl.direct_messages(thread.id)[0]
+        lastMessage = cl.direct_messages(thread.id)[0]
 
-        thread_id = thread.id
-        message_text = last_message_in_thread.text
-        sender_id = last_message_in_thread.user_id
-        message_timestamp = last_message_in_thread.created_at.timestamp()
+        threadID = thread.id
+        message = lastMessage.text
+        senderID = lastMessage.user_id
+        messageTimestamp = lastMessage.timestamp
 
-        # Ignore messages received before the bot started
-        if message_timestamp < start_time:
+        if messageTimestamp < start_time:
             continue
 
-        # Get the username of the client
-        if sender_id != bot_user_id:
+        if senderID != botID:
             client = thread.users[0].username
 
-            if thread_id not in last_messages or last_messages[thread_id] != message_text:
-                print(f"New message from {client}: {message_text}")
-                last_messages[thread_id] = message_text
+        if threadID not in lastMessages or lastMessages[threadID] != message:
+            print(f"New message from {client}: {message}")
+            lastMessages[threadID] = message
 
-                # Check if the first interaction
-                if handleData.isFirstInteraction(sender_id, users_data):
-                    cl.direct_send(messages.welcome[users_data.get(sender_id, {}).get('language', 'en')], thread_ids=[thread_id])
-                    handleData.appendUser(sender_id, users_data)
-                    continue
-
-                if message_text == "/play" or message_text == "/start":
-                    if not handleData.playedToday(sender_id, users_data) and not handleData.isPlaying(sender_id, users_data):
-                        handleData.startGame(sender_id, users_data)
-                        cl.direct_send(messages.game_started[users_data.get(sender_id, {}).get('language', 'en')], thread_ids=[thread_id])
+            if commands.isCommand(message):
+                try:
+                    response = commands.execCommand(message, client)
+                    cl.direct_send(response[usersData.getLang(client)], thread_ids=[threadID])
+                except ValueError as e:
+                    print(e)
+            
+            elif not usersData.isExists(client):
+                if usersData.getFirstInteraction(client):
+                    usersData.setFirstInteraction(client)
+                    cl.direct_send(messages.TUTO_LANGUAGE[usersData.getLang(client)], thread_ids=[threadID])
+            
+            else:
+                if usersData.getGameover(client):
+                    cl.direct_send(messages.ALREADY_PLAYED_TODAY[usersData.getLang(client)], thread_ids=[threadID])
+                
+                elif usersData.getGamewin(client):
+                    cl.direct_send(messages.ALREADY_PLAYED_TODAY[usersData.getLang(client)], thread_ids=[threadID])
+                
+                elif usersData.getPlaying(client):
+                    correctWord = usersData.getWord(client)
+                    feedback = word.checkWord(message, correctWord)
+                    cl.direct_send(feedback, thread_ids=[threadID])
+                    
+                    if message == correctWord:
+                        usersData.setGamewin(client)
+                        cl.direct_send(messages.CORRECT_GUESS[usersData.getLang(client)], thread_ids=[threadID])
+                    
                     else:
-                        cl.direct_send(messages.already_played_today[users_data.get(sender_id, {}).get('language', 'en')], thread_ids=[thread_id])
-                
-                elif message_text == "/stop":
-                    handleData.stopGame(sender_id, users_data)
-                    cl.direct_send(messages.game_stopped[users_data.get(sender_id, {}).get('language', 'en')], thread_ids=[thread_id])
-                
-                elif message_text.startswith("/lang"):
-                    lang = message_text.split(" ")[1]
-                    handleData.changeLanguage(sender_id, lang, users_data)
-                    cl.direct_send(messages.language[lang], thread_ids=[thread_id])
-                    cl.direct_send(messages.welcome[lang], thread_ids=[thread_id])
-                
-                elif handleData.getGameWin(sender_id, users_data):
-                    cl.direct_send(messages.game_winded[users_data.get(sender_id, {}).get('language', 'en')], thread_ids=[thread_id])
+                        usersData.appendErrorCount(client)
 
-                elif handleData.getGameOver(sender_id, users_data):
-                    cl.direct_send(messages.already_played_today[users_data.get(sender_id, {}).get('language', 'en')], thread_ids=[thread_id])
-
-                else:
-                    if handleData.isPlaying(sender_id, users_data) and not handleData.getGameOver(sender_id, users_data):
-                        message_lower = message_text.lower()
+                        if usersData.getErrorCount(client) > 5:
+                            usersData.setGameover(client)
+                            cl.direct_send(messages.GAME_OVER[usersData.getLang(client)], thread_ids=[threadID])
+                            usersData.setPlaying(client, False)
                         
-                        if len(message_lower) != len(word_of_the_day):
-                            lang = users_data.get(sender_id, {}).get('language', 'en')
-                            invalid_length_message = messages.invalid_guess_length[lang].format(len(word_of_the_day))
-                            cl.direct_send(invalid_length_message, thread_ids=[thread_id])
-                            continue
-
-                        if message_lower == word_of_the_day:
-                            handleData.stopGame(sender_id, users_data)
-                            handleData.setGameWin(sender_id, users_data)
-                            cl.direct_send(messages.correct_guess[users_data.get(sender_id, {}).get('language', 'en')], thread_ids=[thread_id])
-                        
-                        elif not handleData.getGameOver(sender_id, users_data):
-                            handleData.incrementErrorCount(sender_id, users_data)
-                            lang = users_data.get(sender_id, {}).get('language', 'en')
-                            cl.direct_send(word.check_word_with_emojis(message_lower, word_of_the_day), thread_ids=[thread_id])
-                            if handleData.getErrorCount(sender_id, users_data) >= 6:
-                                handleData.setGameOver(sender_id, users_data)
-                                cl.direct_send(messages.game_over[lang], thread_ids=[thread_id])
-                            else:
-                                incorrect_guess_message = messages.incorrect_guess[lang].format(handleData.getErrorCount(sender_id, users_data))
-                                cl.direct_send(incorrect_guess_message, thread_ids=[thread_id])
-
-    time.sleep(0.1)
+                        else:
+                            cl.direct_send(messages.INCORRECT_GUESS[usersData.getLang(client)].format(usersData.getErrorCount(client)), thread_ids=[threadID])
