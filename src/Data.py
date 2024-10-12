@@ -1,6 +1,6 @@
 from datetime import datetime
 import sqlite3
-import word
+import word as w
 import os
 
 # Path to the database
@@ -9,27 +9,30 @@ DATABASE_NAME = os.path.join(DB_DIR, "users.db")
 
 class Data:
     def __init__(self):
-        if not os.path.exists(DB_DIR):
-            os.makedirs(DB_DIR)
+        self.createDatabaseIfNotExists()
 
-        conn = sqlite3.connect(DATABASE_NAME)
-        cursor = conn.cursor()
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            user_id TEXT PRIMARY KEY,
-            last_played_date TEXT,
-            first_interaction BOOLEAN DEFAULT 0,
-            playing BOOLEAN DEFAULT 0,
-            language TEXT DEFAULT 'en',
-            error_count INTEGER DEFAULT 0,
-            gameover BOOLEAN DEFAULT 0,
-            gamewin BOOLEAN DEFAULT 0,
-            word TEXT DEFAULT ''
-        );
-    ''')
+    def createDatabaseIfNotExists(self):
+        if not os.path.exists(DATABASE_NAME):
+            if not os.path.exists(DB_DIR):
+                os.makedirs(DB_DIR)
 
-        conn.commit()
-        conn.close()
+            conn = sqlite3.connect(DATABASE_NAME)
+            cursor = conn.cursor()
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                user_id TEXT PRIMARY KEY,
+                last_played_date TEXT,
+                playing BOOLEAN DEFAULT 0,
+                language TEXT DEFAULT 'en',
+                error_count INTEGER DEFAULT 0,
+                gameover BOOLEAN DEFAULT 0,
+                gamewin BOOLEAN DEFAULT 0,
+                word TEXT DEFAULT ''
+            );
+            ''')
+
+            conn.commit()
+            conn.close()
 
     def getUsers(self):
         conn = sqlite3.connect(DATABASE_NAME)
@@ -55,20 +58,22 @@ class Data:
         conn.close()
 
     def setWord(self, user_id, lang):
-        conn = sqlite3.connect(DATABASE_NAME)
-        cursor = conn.cursor()
-        word = word.getTodayWord(lang)
-        cursor.execute("UPDATE users SET word = ? WHERE user_id = ?", (word, user_id))
-        conn.commit()
-        conn.close()
+        if self.getPlaying(user_id):
+            conn = sqlite3.connect(DATABASE_NAME)
+            cursor = conn.cursor()
+            word = w.getTodayWord(lang)
+            cursor.execute("UPDATE users SET word = ? WHERE user_id = ?", (word, user_id))
+            conn.commit()
+            conn.close()
 
     def getWord(self, user_id):
-        conn = sqlite3.connect(DATABASE_NAME)
-        cursor = conn.cursor()
-        cursor.execute("SELECT word FROM users WHERE user_id = ?", (user_id,))
-        word = cursor.fetchone()
-        conn.close()
-        return word[0] if word else None
+        if not self.getPlaying(user_id):
+            conn = sqlite3.connect(DATABASE_NAME)
+            cursor = conn.cursor()
+            cursor.execute("SELECT word FROM users WHERE user_id = ?", (user_id,))
+            word = cursor.fetchone()
+            conn.close()
+            return word[0] if word else None
 
     def getLang(self, user_id):
         conn = sqlite3.connect(DATABASE_NAME)
@@ -86,21 +91,6 @@ class Data:
         conn.close()
         self.setWord(user_id, lang)
 
-    def getFirstInteraction(self, user_id):
-        conn = sqlite3.connect(DATABASE_NAME)
-        cursor = conn.cursor()
-        cursor.execute("SELECT first_interaction FROM users WHERE user_id = ?", (user_id,))
-        first_interaction = cursor.fetchone()
-        conn.close()
-        return first_interaction[0] if first_interaction else 0
-    
-    def setFirstInteraction(self, user_id):
-        conn = sqlite3.connect(DATABASE_NAME)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE users SET first_interaction = 1 WHERE user_id = ?", (user_id,))
-        conn.commit()
-        conn.close()
-        
     def getPlaying(self, user_id):
         conn = sqlite3.connect(DATABASE_NAME)
         cursor = conn.cursor()
@@ -115,6 +105,7 @@ class Data:
         cursor.execute("UPDATE users SET playing = ? WHERE user_id = ?", (1 if playing else 0, user_id))
         conn.commit()
         conn.close()
+        self.setWord(user_id, self.getLang(user_id))
     
     def getErrorCount(self, user_id):
         conn = sqlite3.connect(DATABASE_NAME)
@@ -182,11 +173,5 @@ class Data:
         conn.commit()
         conn.close()
 
-    def isExists(self, user_id):
-        conn = sqlite3.connect(DATABASE_NAME)
-        cursor = conn.cursor()
-        cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
-        result = cursor.fetchone()
-        conn.close()
-        return result is not None
-    
+    def isNewUser(self, user_id):
+        return not self.getUser(user_id)

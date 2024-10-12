@@ -7,9 +7,8 @@ import private
 import word
 import os
 
-# Delete users data -> temporary
-if os.path.exists("database/users.db"):
-    os.remove("database/users.db")
+# Users data
+usersData = Data()
 
 # Get the 2FA code from user
 code = input("2FA Code: ")
@@ -24,29 +23,23 @@ botID = cl.user_id
 # Last Messages
 lastMessages = {}
 
-# Users data
-usersData = Data()
-
 start_time = datetime.now()
 
 # Commands
 commands = Commands()
 
 # /Lang command
-def langCommand(client, message):
-    parts = message.split()
+def langError(client):
+    return messages.TUTO_LANGUAGE[usersData.getLang(client)]
 
-    if len(parts) > 1:
-        lang = parts[1].lower()
-        if lang in ["pt", "en", "es"]:
-            usersData.changeLang(client, lang)
-            return messages.LANG_CHANGED
-        else:
-            return messages.INVALID_LANGUAGE
+def langCommand(client, lang):
+    if lang in ["pt", "en", "es"]:
+        usersData.changeLang(client, lang)
+        return messages.LANG_CHANGED[usersData.getLang(client)]
     else:
-        return messages.TUTO_LANGUAGE
+        return messages.INVALID_LANGUAGE[usersData.getLang(client)]
 
-commands.appendCommand("lang", langCommand)
+commands.appendCommand("lang", langCommand, langError)
 
 # /Play command
 def playCommand(client):
@@ -84,45 +77,46 @@ while True:
         if senderID != botID:
             client = thread.users[0].username
 
-        if threadID not in lastMessages or lastMessages[threadID] != message:
-            print(f"New message from {client}: {message}")
-            lastMessages[threadID] = message
+            if threadID not in lastMessages or lastMessages[threadID] != message:
+                print(f"New message from {client}: {message}")            
+                lastMessages[threadID] = message
 
-            if commands.isCommand(message):
-                try:
-                    response = commands.execCommand(message, client)
-                    cl.direct_send(response[usersData.getLang(client)], thread_ids=[threadID])
-                except ValueError as e:
-                    print(e)
-            
-            elif not usersData.isExists(client):
-                if usersData.getFirstInteraction(client):
-                    usersData.setFirstInteraction(client)
-                    cl.direct_send(messages.TUTO_LANGUAGE[usersData.getLang(client)], thread_ids=[threadID])
-            
-            else:
-                if usersData.getGameover(client):
-                    cl.direct_send(messages.ALREADY_PLAYED_TODAY[usersData.getLang(client)], thread_ids=[threadID])
-                
-                elif usersData.getGamewin(client):
-                    cl.direct_send(messages.ALREADY_PLAYED_TODAY[usersData.getLang(client)], thread_ids=[threadID])
-                
-                elif usersData.getPlaying(client):
-                    correctWord = usersData.getWord(client)
-                    feedback = word.checkWord(message, correctWord)
-                    cl.direct_send(feedback, thread_ids=[threadID])
-                    
-                    if message == correctWord:
-                        usersData.setGamewin(client)
-                        cl.direct_send(messages.CORRECT_GUESS[usersData.getLang(client)], thread_ids=[threadID])
-                    
-                    else:
-                        usersData.appendErrorCount(client)
+                if usersData.isNewUser(client):
+                    print(f"New user: {client} appended to database at {messageTimestamp}")
+                    usersData.appendUser(client)
+                    cl.direct_send(messages.WELCOME[usersData.getLang(client)], thread_ids=[threadID])
+                    continue
 
-                        if usersData.getErrorCount(client) > 5:
-                            usersData.setGameover(client)
-                            cl.direct_send(messages.GAME_OVER[usersData.getLang(client)], thread_ids=[threadID])
-                            usersData.setPlaying(client, False)
+                if commands.isCommand(message):
+                    try:
+                        response = commands.runCommand(message, client)
+                        cl.direct_send(response[usersData.getLang(client)], thread_ids=[threadID])
+                    except ValueError as e:
+                        print(e)
+                
+                else:
+                    if usersData.getGameover(client):
+                        cl.direct_send(messages.ALREADY_PLAYED_TODAY[usersData.getLang(client)], thread_ids=[threadID])
+                    
+                    elif usersData.getGamewin(client):
+                        cl.direct_send(messages.ALREADY_PLAYED_TODAY[usersData.getLang(client)], thread_ids=[threadID])
+                    
+                    elif usersData.getPlaying(client):
+                        correctWord = usersData.getWord(client)
+                        feedback = word.checkWord(message, correctWord)
+                        cl.direct_send(feedback, thread_ids=[threadID])
+                        
+                        if message == correctWord:
+                            usersData.setGamewin(client)
+                            cl.direct_send(messages.CORRECT_GUESS[usersData.getLang(client)], thread_ids=[threadID])
                         
                         else:
-                            cl.direct_send(messages.INCORRECT_GUESS[usersData.getLang(client)].format(usersData.getErrorCount(client)), thread_ids=[threadID])
+                            usersData.appendErrorCount(client)
+
+                            if usersData.getErrorCount(client) > 5:
+                                usersData.setGameover(client)
+                                cl.direct_send(messages.GAME_OVER[usersData.getLang(client)], thread_ids=[threadID])
+                                usersData.setPlaying(client, False)
+                            
+                            else:
+                                cl.direct_send(messages.INCORRECT_GUESS[usersData.getLang(client)].format(usersData.getErrorCount(client)), thread_ids=[threadID])
