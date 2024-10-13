@@ -41,7 +41,11 @@
     ```bash
     cd instaWordle
     ```
-3. Abra o arquivo `app.py` ou `appserver.py` e insira os dados solicitados.
+3. Instale as dependências necessárias:
+    ```bash
+    pip install -r requirements.txt
+    ```
+4. Abra o arquivo `app.py` ou `appserver.py` e insira os dados solicitados.
 
 ### Contribuições
 
