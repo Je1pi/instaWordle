@@ -1,6 +1,6 @@
+from WordleCore import Wordle
 from datetime import datetime
 import sqlite3
-import word as w
 import os
 
 # Path to the database
@@ -9,6 +9,7 @@ DATABASE_NAME = os.path.join(DB_DIR, "users.db")
 
 class Data:
     def __init__(self):
+        self.wordle = Wordle()
         self.createDatabaseIfNotExists()
 
     def createDatabaseIfNotExists(self):
@@ -28,7 +29,9 @@ class Data:
                 gameover BOOLEAN DEFAULT 0,
                 gamewin BOOLEAN DEFAULT 0,
                 word TEXT DEFAULT '',
-                theme TEXT DEFAULT 'dark'
+                theme TEXT DEFAULT 'dark',
+                difficulty INTEGER DEFAULT 1,
+                chances INTEGER DEFAULT 5
             );
             ''')
 
@@ -62,8 +65,13 @@ class Data:
         if self.getPlaying(user_id):
             conn = sqlite3.connect(DATABASE_NAME)
             cursor = conn.cursor()
-            word = w.getTodayWord(lang)
-            cursor.execute("UPDATE users SET word = ? WHERE user_id = ?", (word, user_id))
+
+            word = self.wordle.getTodayWord(lang)
+            difficulty = self.getDifficulty(user_id)
+
+            chances = max(5, 5 + difficulty)
+
+            cursor.execute("UPDATE users SET word = ?, chances = ? WHERE user_id = ?", (word, chances, user_id))
             conn.commit()
             conn.close()
 
@@ -191,3 +199,12 @@ class Data:
 
     def isNewUser(self, user_id):
         return not self.getUser(user_id)
+    
+    def getDifficulty(self, user_id):
+        """Obtém a dificuldade do usuário."""
+        conn = sqlite3.connect(DATABASE_NAME)
+        cursor = conn.cursor()
+        cursor.execute("SELECT difficulty FROM users WHERE user_id = ?", (user_id,))
+        difficulty = cursor.fetchone()
+        conn.close()
+        return difficulty[0] if difficulty else -1

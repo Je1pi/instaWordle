@@ -1,4 +1,9 @@
 // Ignorar arquivos com dados sensíveis
+private.py
+private.json
+credentials.json
+credentials.py
+src/credentials.json
 src/private.py
 src/database/users.db
 src/logs
