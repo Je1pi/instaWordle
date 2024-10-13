@@ -8,7 +8,8 @@ WELCOME = {
         "   - 🟨: Correct letter in the wrong position\n"
         "   - ⬛: Letter not in the word\n"
         "\nLet's get started! Type '/play' to begin or ask any questions!\n"
-        "\n/lang [en|pt|es] to change the language"
+        "\n/lang [en|pt|es] to change the language\n"
+        "\n/theme [dark|light] to change the theme"
     ),
     "pt": (
         "Olá! 👋 Bem-vindo ao InstaWordle! 🎉\n"
@@ -19,7 +20,8 @@ WELCOME = {
         "   - 🟨: Letra correta na posição errada\n"
         "   - ⬛: Letra não está na palavra\n"
         "\nVamos começar? Digite '/play' para começar ou faça qualquer pergunta!\n"
-        "\n/lang [en|pt|es] para mudar o idioma"
+        "\n/lang [en|pt|es] para mudar o idioma\n"
+        "\n/theme [dark|light] para mudar o tema"
     ),
     "es": (
         "¡Hola! 👋 ¡Bienvenido a InstaWordle! 🎉\n"
@@ -30,13 +32,32 @@ WELCOME = {
         "   - 🟨: Letra correcta en la posición incorrecta\n"
         "   - ⬛: La letra no está en la palabra\n"
         "\n¡Comencemos! Escribe '/play' para empezar o haz cualquier pregunta!\n"
-        "\n/lang [en|pt|es] para cambiar el idioma"
+        "\n/lang [en|pt|es] para cambiar el idioma\n"
+        "\n/theme [dark|light] para cambiar el tema"
+    )
+}
+
+LANG_CHANGED_PLAYING = {
+    "en": (
+        "Language has been changed to English.\n"
+        "\nThe word now has {} letters.\n"
+        "Good luck! 🎉"
+    ),
+    "pt": (
+        "Idioma alterado para Português.\n"
+        "\nAgora a palavra tem {} letras.\n"
+        "Boa Sorte! 🎉"
+    ),
+    "es": (
+        "Idioma cambiado a Español.\n"
+        "\nAhora la palabra tiene {} letras.\n"
+        "¡Buena suerte! 🎉"
     )
 }
 
 LANG_CHANGED = {
     "en": "Language changed to English.",
-    "pt": "A língua foi alterada para Português.",
+    "pt": "Idioma alterado para Português.",
     "es": "Idioma cambiado a Español."
 }
 
@@ -104,4 +125,22 @@ GAME_OVER = {
     "en": "Game Over! The word was '{}'. Better luck next time!",
     "pt": "Fim de Jogo! A palavra era '{}'. Boa sorte na próxima!",
     "es": "Fin del Juego! La palabra era '{}'. ¡Buena suerte la próxima vez!"
+}
+
+TUTO_THEME = {
+    "en": "Please choose a theme. Example: /theme [dark|light].",
+    "pt": "Por favor, escolha um tema. Exemplo: /theme [dark|light].",
+    "es": "Por favor, elige un tema. Ejemplo: /theme [dark|light]."
+}
+
+THEME_CHANGED = {
+    "en": "Theme changed.",
+    "pt": "Tema alterado.",
+    "es": "Tema cambiado."
+}
+
+INVALID_THEME = {
+    "en": "Invalid theme. Please choose from [dark|light].",
+    "pt": "Tema inválido. Por favor, escolha entre [dark|light].",
+    "es": "Tema inválido. Por favor, elige entre [dark|light]."
 }

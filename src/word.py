@@ -6,7 +6,7 @@ import os
 DB_DIR = "src/database/"
 DATABASE_NAME = os.path.join(DB_DIR, "wordle.db")
 
-def selectWord(lang):
+def selectWord(lang: str) -> str:
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     
@@ -47,7 +47,7 @@ def setTodayWord():
     
     conn.close()
 
-def getTodayWord(lang):
+def getTodayWord(lang: str) -> str:
     today = datetime.date.today()
     date_str = today.strftime('%Y-%m-%d')
 
@@ -67,21 +67,21 @@ def getTodayWord(lang):
     else:
         raise ValueError("No word found for today's date and the specified language.")
 
-def checkWord(user_word, correct_word):
-    """Compares the user's word with the correct word and returns emojis."""
-    feedback = []
-    user = user_word.lower()
+def checkWord(user: str, correct_word: str, theme: str) -> str:
+    if len(user) != len(correct_word):
+        return None
 
-    # Check letter by letter
+    feedback = []
+    
     for i in range(len(user)):
         if user[i] == correct_word[i]:
-            feedback.append("🟩")  # Correct letter in the correct position
+            feedback.append("🟩")
         elif user[i] in correct_word:
-            feedback.append("🟨")  # Correct letter but in the wrong position
+            feedback.append("🟨")
         else:
-            feedback.append("⬛")  # Letter not in the word
+            feedback.append("⬜" if theme == "light" else "⬛")
 
-    return ''.join(feedback)
+    return "".join(feedback)
 
 def checkWordCorrect(user_word, correct_word):
     """Checks if the user's word is correct."""

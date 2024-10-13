@@ -27,7 +27,8 @@ class Data:
                 error_count INTEGER DEFAULT 0,
                 gameover BOOLEAN DEFAULT 0,
                 gamewin BOOLEAN DEFAULT 0,
-                word TEXT DEFAULT ''
+                word TEXT DEFAULT '',
+                theme TEXT DEFAULT 'dark'
             );
             ''')
 
@@ -172,6 +173,21 @@ class Data:
         cursor.execute("UPDATE users SET gamewin = 0 WHERE user_id = ?", (user_id,))
         conn.commit()
         conn.close()
+
+    def setTheme(self, user_id, theme):
+        conn = sqlite3.connect(DATABASE_NAME)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET theme = ? WHERE user_id = ?", (theme, user_id))
+        conn.commit()
+        conn.close()
+    
+    def getTheme(self, user_id):
+        conn = sqlite3.connect(DATABASE_NAME)
+        cursor = conn.cursor()
+        cursor.execute("SELECT theme FROM users WHERE user_id = ?", (user_id,))
+        theme = cursor.fetchone()
+        conn.close()
+        return theme[0] if theme else 'black'
 
     def isNewUser(self, user_id):
         return not self.getUser(user_id)

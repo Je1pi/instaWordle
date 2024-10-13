@@ -43,7 +43,10 @@ def langCommand(client, lang):
     if lang in ["pt", "en", "es"]:
         log.addToLog(f"Language changed to {lang} for user: {client}")
         usersData.changeLang(client, lang)
-        return messages.LANG_CHANGED[usersData.getLang(client)]
+        if not usersData.getPlaying(client):
+            return messages.LANG_CHANGED[usersData.getLang(client)]
+        else:
+            return messages.LANG_CHANGED_PLAYING[usersData.getLang(client)].format(len(usersData.getWord(client)))
     else:
         log.addToLog(f"Invalid language command by user: {client}")
         return messages.INVALID_LANGUAGE[usersData.getLang(client)]
@@ -66,6 +69,53 @@ def stopCommand(client):
 
 commands.appendCommand("stop", stopCommand)
 
+# /Theme command
+def themeError(client):
+    log.addToLog(f"Theme command error for user: {client}")
+    return messages.TUTO_THEME[usersData.getLang(client)]
+
+def themeCommand(client, theme):
+    if theme in ["dark", "light"]:
+        log.addToLog(f"Theme changed to {theme} for user: {client}")
+        usersData.setTheme(client, theme)
+        return messages.THEME_CHANGED[usersData.getLang(client)]
+    else:
+        log.addToLog(f"Invalid theme command by user: {client}")
+        return messages.INVALID_THEME[usersData.getLang(client)]
+
+commands.appendCommand("theme", themeCommand, themeError)
+
+# /Welcome command
+def welcomeCommand(client):
+    log.addToLog(f"Welcome message sent to user: {client}")
+    return messages.WELCOME[usersData.getLang(client)]
+
+commands.appendCommand("welcome", welcomeCommand)
+
+# Verify if is bot message
+def isBotMessage(message: str, lang: str) -> bool:
+    bot_messages = [
+        word.WELCOME[lang],
+        word.LANG_CHANGED[lang],
+        word.INVALID_LANGUAGE[lang],
+        word.TUTO_LANGUAGE[lang],
+        word.GAME_STARTED[lang],
+        word.GAME_STOPPED[lang],
+        word.INVALID_GUESS_LENGTH[lang],
+        word.ALREADY_PLAYED_TODAY[lang],
+        word.CORRECT_GUESS[lang],
+        word.INCORRECT_GUESS[lang],
+        word.GAME_OVER[lang],
+        word.TUTO_THEME[lang],
+        word.THEME_CHANGED[lang],
+        word.INVALID_THEME[lang]
+    ]
+    
+    return (
+        any(bot_message in message for bot_message in bot_messages) or
+        any(emoji in message for emoji in ["🟩", "🟨", "⬛", "⬜"]) or
+        any(char.isdigit() for char in message)
+    )
 
 print("Bot is running...")
 log.addToLog("Bot started")
@@ -84,14 +134,14 @@ while True:
         message = lastMessage.text
         senderID = lastMessage.user_id
         messageTimestamp = lastMessage.timestamp
+        client = thread.users[0].username
 
         if messageTimestamp < start_time:
             continue
 
-        if senderID == botID:
+        if senderID == botID or isBotMessage(message, usersData.getLang(client)):
             continue
 
-        client = thread.users[0].username
 
         if threadID not in lastMessages or lastMessages[threadID] != message:
             log.addToLog(f"New message from {client}: {message}")
@@ -124,24 +174,26 @@ while True:
 
                 elif usersData.getPlaying(client):
                     correctWord = usersData.getWord(client)
-                    feedback = word.checkWord(message, correctWord)
-                    cl.direct_send(feedback, thread_ids=[threadID])
-                    log.addToLog(f"Feedback sent to user {client}: {feedback}")
+                    feedback = word.checkWord(message, correctWord, usersData.getTheme(client))
+                    
+                    if feedback != None:
+                        cl.direct_send(feedback, thread_ids=[threadID])
+                        log.addToLog(f"Feedback sent to user {client}: {feedback}")
 
-                    if message == usersData.getWord(client):
-                        log.addToLog(f"User {client} guessed the correct word")
-                        usersData.setGamewin(client)
-                        cl.direct_send(messages.CORRECT_GUESS[usersData.getLang(client)], thread_ids=[threadID])
-
-                    else:
-                        usersData.appendErrorCount(client)
-                        log.addToLog(f"User {client} guessed incorrectly. Error count: {usersData.getErrorCount(client)}")
-
-                        if usersData.getErrorCount(client) > 5:
-                            log.addToLog(f"User {client} reached max error count. Game over.")
-                            usersData.setGameover(client)
-                            cl.direct_send(messages.GAME_OVER[usersData.getLang(client)], thread_ids=[threadID])
-                            usersData.setPlaying(client, False)
+                        if word.checkWordCorrect(message, correctWord):
+                            log.addToLog(f"User {client} guessed the correct word")
+                            usersData.setGamewin(client, True)
+                            cl.direct_send(messages.CORRECT_GUESS[usersData.getLang(client)], thread_ids=[threadID])
 
                         else:
-                            cl.direct_send(messages.INCORRECT_GUESS[usersData.getLang(client)].format(usersData.getErrorCount(client)), thread_ids=[threadID])
+                            usersData.appendErrorCount(client)
+                            log.addToLog(f"User {client} guessed incorrectly. Error count: {usersData.getErrorCount(client)}")
+
+                            if usersData.getErrorCount(client) > 5:
+                                log.addToLog(f"User {client} reached max error count. Game over.")
+                                usersData.setGameover(client, True)
+                                cl.direct_send(messages.GAME_OVER[usersData.getLang(client)], thread_ids=[threadID])
+                                usersData.setPlaying(client, False)
+
+                            else:
+                                cl.direct_send(messages.INCORRECT_GUESS[usersData.getLang(client)].format(usersData.getErrorCount(client)), thread_ids=[threadID])
