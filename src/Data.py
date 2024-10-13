@@ -67,7 +67,7 @@ class Data:
             conn.close()
 
     def getWord(self, user_id):
-        if not self.getPlaying(user_id):
+        if self.getPlaying(user_id):
             conn = sqlite3.connect(DATABASE_NAME)
             cursor = conn.cursor()
             cursor.execute("SELECT word FROM users WHERE user_id = ?", (user_id,))

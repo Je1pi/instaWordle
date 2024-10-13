@@ -1,6 +1,7 @@
 // Ignorar arquivos com dados sensíveis
 src/private.py
 src/database/users.db
+src/logs
 
 // Ignorar Env
 env

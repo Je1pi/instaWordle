@@ -54,15 +54,18 @@ TUTO_LANGUAGE = {
 
 GAME_STARTED = {
     "en": (
-        "The Game has started! Good luck! 🎉\n",
+        "The Game has started! Good luck! 🎉\n"
+        "The word has {} letters.\n"
         "Type your guess below or type '/stop' to stop the game."
     ),
     "pt": (
-        "O Jogo começou! Boa sorte! 🎉\n",
+        "O Jogo começou! Boa sorte! 🎉\n"
+        "A palavra tem {} letras.\n"
         "Digite seu palpite abaixo ou digite '/stop' para parar o jogo."
     ),
     "es": (
-        "¡El juego ha comenzado! ¡Buena suerte! 🎉\n",
+        "¡El juego ha comenzado! ¡Buena suerte! 🎉\n"
+        "La palabra tiene {} letras.\n"
         "Escribe tu suposición a continuación o escribe '/stop' para detener el juego."
     )
 }
